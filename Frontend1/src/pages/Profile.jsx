@@ -1,0 +1,416 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useLanguage } from '../context/LanguageContext';
+import axios from 'axios';
+
+export default function Profile() {
+    const navigate = useNavigate();
+    const { t } = useLanguage();
+
+    const [user, setUser] = useState(null);
+    const [tools, setTools] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    // ================= PROFILE FETCH =================
+    useEffect(() => {
+        const fetchProfile = async () => {
+            const mobile = localStorage.getItem('mobile');
+            const token = localStorage.getItem("token");
+
+            if (!mobile || !token) {
+                navigate('/login');
+                return;
+            }
+
+            try {
+                const res = await axios.get(
+                    `http://localhost:5000/api/auth/profile?mobile=${mobile}`,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${token}`
+                        }
+                    }
+                );
+
+                setUser(res.data);
+            } catch (err) {
+                console.error(err);
+                localStorage.removeItem('token');
+                localStorage.removeItem('mobile');
+                navigate('/login');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchProfile();
+    }, []);
+
+    // ================= TOOLS FETCH (OWNER ONLY) =================
+    useEffect(() => {
+        const fetchTools = async () => {
+            const mobile = localStorage.getItem("mobile");
+
+            try {
+                const res = await axios.get(
+                    `http://localhost:5000/api/auth/tools?mobile=${mobile}`
+                );
+
+                setTools(res.data);
+            } catch (err) {
+                console.log(err);
+            }
+        };
+
+        fetchTools();
+    }, []);
+
+    if (loading) {
+        return (
+            <div style={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                height: '100vh',
+                fontSize: '1.5rem',
+                color: 'green'
+            }}>
+                लोड होत आहे...
+            </div>
+        );
+    }
+
+    const role = user?.role?.toLowerCase();
+    console.log(tools);
+
+
+    // ================= OWNER PROFILE =================
+    if (role === 'owner') {
+        return (
+            <div style={{ background: '#f0f2f5', minHeight: '100vh', padding: '40px 20px' }}>
+                <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+
+                    {/* PROFILE HEADER */}
+                    <div style={{
+                        background: 'white',
+                        borderRadius: '20px',
+                        padding: '30px',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+                        display: 'flex',
+                        gap: '30px',
+                        alignItems: 'center'
+                    }}>
+                        <img
+                            src={user.profilePicture || 'https://via.placeholder.com/150'}
+                            alt="Profile"
+                            style={{
+                                width: '150px',
+                                height: '150px',
+                                borderRadius: '50%'
+                            }}
+                        />
+
+                        <div>
+                            <h2>{user.fullName}</h2>
+                            <p>📱 {user.mobile}</p>
+                            <p>👤 {user.role}</p>
+                        </div>
+                    </div>
+
+                    {/* DETAILS */}
+                    <div style={{
+                        marginTop: '20px',
+                        background: 'white',
+                        padding: '20px',
+                        borderRadius: '15px'
+                    }}>
+                        <h3>वैयक्तिक माहिती</h3>
+                        <p>
+                            <strong>पत्ता:</strong>{" "}
+                            {user.address?.village}, {user.address?.taluka}, {user.address?.district}
+                        </p>
+                        <p><strong>जमिनीचा आकार:</strong> {user.landSize} एकर</p>
+                    </div>
+
+                    {/* ADD TOOL BUTTON */}
+                    <div style={{ marginTop: '20px' }}>
+                        <button
+                            onClick={() => navigate("/add-tool", {
+                                state: {
+                                    userName: user.fullName,
+                                    userId: user._id,
+                                    mobile: user.mobile
+                                }
+                            })}
+                            style={{
+                                padding: '12px 30px',
+                                background: '#ff5252',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '30px',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            Add tool
+                        </button>
+                    </div>
+
+                    {/* ================= TOOLS LIST (BELOW BUTTON) ================= */}
+                    <div style={{ marginTop: '20px' }}>
+                        {tools.length > 0 ? (
+                            <div style={{
+                                background: 'white',
+                                borderRadius: '20px',
+                                padding: '20px'
+                            }}>
+                                <h3>माझी अवजारे 🚜</h3>
+
+                                {tools.map((tool, idx) => (
+                                    <div key={idx} style={{
+                                        background: '#f8f9fa',
+                                        padding: '12px',
+                                        marginTop: '10px',
+                                        borderRadius: '10px',
+                                        borderLeft: '5px solid green'
+                                    }}>
+                                        <p><strong>{tool.implement_name}</strong> ({tool.implement_name_en})</p>
+                                        <p>{tool.usage_type}</p>
+                                        <p>
+                                            {tool.implement_age} वर्षे | {tool.total_usage_hours} तास
+                                        </p>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <p style={{ color: '#999', marginTop: '15px' }}>
+                                अजून कोणतेही अवजार नाही
+                            </p>
+                        )}
+                    </div>
+
+                    {/* LOGOUT */}
+                    <div style={{ marginTop: '30px', textAlign: 'center' }}>
+                        <button
+                            onClick={() => {
+                                localStorage.removeItem('token');
+                                localStorage.removeItem('mobile');
+                                navigate('/login');
+                            }}
+                            style={{
+                                padding: '12px 30px',
+                                background: '#ff5252',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '30px'
+                            }}
+                        >
+                            बाहेर पडा
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // ================= FARMER PROFILE =================
+    return (
+        <div style={{
+            background: '#f0f2f5',
+            minHeight: '100vh',
+            padding: '40px 20px'
+        }}>
+            <div style={{
+                maxWidth: '900px',
+                margin: '0 auto'
+            }}>
+                {/* Profile Header */}
+                <div style={{
+                    background: 'white',
+                    borderRadius: '20px',
+                    padding: '30px',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '30px',
+                    marginBottom: '30px',
+                    flexWrap: 'wrap'
+                }}>
+                    <div style={{ position: 'relative' }}>
+                        <img
+                            src={user.profilePicture || 'https://via.placeholder.com/150'}
+                            alt="Profile"
+                            style={{ width: '150px', height: '150px', borderRadius: '50%', objectFit: 'cover', border: '5px solid #fff', boxShadow: '0 4px 10px rgba(0,0,0,0.1)' }}
+                        />
+                        <div style={{
+                            position: 'absolute',
+                            bottom: '10px',
+                            right: '10px',
+                            background: 'var(--primary-green)',
+                            color: 'white',
+                            padding: '8px',
+                            borderRadius: '50%',
+                            cursor: 'pointer',
+                            boxShadow: '0 2px 5px rgba(0,0,0,0.2)'
+                        }}>
+                            <i className="fas fa-camera"></i>
+                        </div>
+                    </div>
+                    <div style={{ flex: 1 }}>
+                        <h2 style={{ fontSize: '2.2rem', color: '#1a1a1a', margin: '0 0 5px 0' }}>{user.fullName}</h2>
+                        <p style={{ color: '#666', fontSize: '1.1rem', margin: '0 0 15px 0' }}>
+                            <span style={{
+                                background: user.role === 'farmer' ? '#e8f5e9' : '#fff3e0',
+                                color: user.role === 'farmer' ? '#2e7d32' : '#ef6c00',
+                                padding: '4px 12px',
+                                borderRadius: '20px',
+                                fontWeight: '600',
+                                textTransform: 'capitalize'
+                            }}>
+                                {user.role}
+                            </span>
+                        </p>
+                        <div style={{ display: 'flex', gap: '20px', color: '#555' }}>
+                            <span><strong>मोबाईल:</strong> {user.mobile}</span>
+                            {user.email && <span><strong>ईमेल:</strong> {user.email}</span>}
+                        </div>
+                    </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '30px' }}>
+                    {/* Details Column */}
+                    <div>
+                        <div style={{ background: 'white', borderRadius: '20px', padding: '25px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', marginBottom: '30px' }}>
+                            <h3 style={{ borderBottom: '2px solid #f0f0f0', paddingBottom: '10px', marginBottom: '20px', color: '#333' }}>वैयक्तिक माहिती</h3>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                <p><strong>पत्ता:</strong> {user.address?.village}, {user.address?.taluka}, {user.address?.district}, {user.address?.state} - {user.address?.pincode}</p>
+                                {user.role === 'farmer' ? (
+                                    <p><strong>जमिनीचा आकार:</strong> {user.landSize} एकर</p>
+                                ) : (
+                                    <p><strong>दुकानाचे नाव:</strong> {user.shopName || 'दिलेले नाही'}</p>
+                                )}
+                            </div>
+                        </div>
+
+                        {user.role === 'owner' && user.tools && user.tools.length > 0 && (
+                            <div style={{ background: 'white', borderRadius: '20px', padding: '25px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+                                <h3 style={{ borderBottom: '2px solid #f0f0f0', paddingBottom: '10px', marginBottom: '20px', color: '#333' }}>तुमची अवजारे</h3>
+                                {user.tools.map((tool, idx) => (
+                                    <div key={idx} style={{ marginBottom: '15px', padding: '10px', background: '#f8f9fa', borderRadius: '10px' }}>
+                                        <p><strong>{tool.toolName}</strong> ({tool.toolCategory})</p>
+                                        <p style={{ color: '#666', fontSize: '0.9rem' }}>₹{tool.rentalPrice}/day</p>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+
+                </div>
+                <div style={{
+                    background: 'white',
+                    borderRadius: '20px',
+                    padding: '25px',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+                    marginTop: '30px'
+                }}>
+                    <h3 style={{
+                        borderBottom: '2px solid #f0f0f0',
+                        paddingBottom: '10px',
+                        marginBottom: '20px',
+                        color: '#333'
+                    }}>
+                        माझे बुकिंग
+                    </h3>
+
+                    {user.bookings && user.bookings.length > 0 ? (
+                        user.bookings.map((b, idx) => (
+                            <div
+                                key={idx}
+                                style={{
+                                    padding: '15px',
+                                    background: '#f1f8e9',
+                                    borderRadius: '12px',
+                                    borderLeft: '5px solid #2e7d32',
+                                    marginBottom: '12px'
+                                }}
+                            >
+                                <p><strong>{b.tool_name}</strong></p>
+
+                                <p style={{ fontSize: '0.9rem' }}>
+                                    मालक: {b.owner_name}
+                                </p>
+
+                                <p style={{ fontSize: '0.85rem', color: '#555' }}>
+                                    तारीख: {b.booking_date}
+                                </p>
+
+                                <p style={{ fontSize: '0.85rem', color: '#555' }}>
+                                    {b.start_time} → {b.end_time}
+                                </p>
+
+                                <p style={{ fontSize: '0.85rem', color: '#2e7d32', fontWeight: 'bold' }}>
+                                    स्थिती: {b.status}
+                                </p>
+
+                                <p>स्थिती: {b.status}</p>
+
+                                {/* ================= CANCEL BUTTON ================= */}
+                                {b.status !== "cancelled" && (
+                                    <button
+                                        onClick={async () => {
+                                            try {
+                                                await axios.post("http://localhost:5000/cancel-booking", {
+                                                    booking_id: b.id
+                                                });
+
+                                                // refresh page
+                                                window.location.reload();
+
+                                            } catch (err) {
+                                                alert("Cancel failed");
+                                            }
+                                        }}
+                                        style={{
+                                            marginTop: "10px",
+                                            padding: "6px 12px",
+                                            background: "#ff5252",
+                                            color: "white",
+                                            border: "none",
+                                            borderRadius: "6px",
+                                            cursor: "pointer"
+                                        }}
+                                    >
+                                        बुकिंग रद्द करा
+                                    </button>
+                                )}
+                            </div>
+                        ))
+                    ) : (
+                        <p style={{ color: '#999', textAlign: 'center', padding: '20px' }}>
+                            अद्याप कोणतेही बुकिंग नाही
+                        </p>
+                    )}
+                </div>
+                <div style={{ marginTop: '30px', textAlign: 'center' }}>
+                    <button
+                        onClick={() => { localStorage.removeItem('token'); navigate('/login'); }}
+                        style={{
+                            padding: '12px 30px',
+                            background: '#ff5252',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '30px',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            boxShadow: '0 4px 10px rgba(255, 82, 82, 0.3)',
+                            transition: 'all 0.3s'
+                        }}
+                    >
+                        बाहेर पडा
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+
+}

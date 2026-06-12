@@ -1,0 +1,80 @@
+:root {
+  --primary-green: #2E7D32;
+  /* Growth & Trust */
+  --secondary-green: #66BB6A;
+  /* Fresh Crops */
+  --soil-brown: #8D6E63;
+  /* Indian Farmland */
+  --wheat-beige: #F5F0E6;
+  /* Background / Fields */
+  --mustard-yellow: #FBC02D;
+  /* Call-to-Action Accent */
+  --brick-red: #C62828;
+  /* Alerts / Unavailable */
+
+  /* Mapped standard variables */
+  --bg-light: var(--wheat-beige);
+  --bg-white: #ffffff;
+  --text-dark: #263238;
+  --text-light: #fafafa;
+}
+
+body {
+  margin: 0;
+  font-family: 'Poppins', system-ui, -apple-system, sans-serif;
+  background-color: var(--bg-light);
+  color: var(--text-dark);
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+  transition: color 0.2s;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+/* Button & Utility Classes */
+.btn {
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+  font-size: 1rem;
+}
+
+.btn-primary {
+  background-color: var(--primary-green);
+  color: var(--text-light);
+}
+
+.btn-primary:hover {
+  background-color: #1b5e20;
+  transform: translateY(-2px);
+}
+
+.btn-secondary {
+  background-color: transparent;
+  border: 2px solid var(--primary-green);
+  color: var(--primary-green);
+}
+
+.btn-secondary:hover {
+  background-color: rgba(46, 125, 50, 0.1);
+}
+
+.text-center {
+  text-align: center;
+}
+
+.flex-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
